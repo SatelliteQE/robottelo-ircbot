@@ -24,6 +24,8 @@
 #     * HUBOT_GITHUB_API_URL: the API URL, if not specified will default to
 #       https://api.github.com. This configuration allows using the plugin for
 #       Github Enterprise.
+#     * HUBOT_GITHUB_IGNORE_USERS: a | separated list of users to ignore.
+#       Example: github|travis-ci
 #
 # Author:
 #   elyezer
@@ -33,6 +35,8 @@ module.exports = (robot) ->
     user: process.env.HUBOT_GITHUB_USER
     repo: process.env.HUBOT_GITHUB_REPO
     api_url: process.env.HUBOT_GITHUB_API_URL or 'https://api.github.com'
+    ignore_users: process.env.HUBOT_GITHUB_IGNORE_USERS or 'github'
+
 
   unless config.user?
       robot.logger.error "hubot-github included, but missing HUBOT_GITHUB_USER."
@@ -43,6 +47,8 @@ module.exports = (robot) ->
 
 
   robot.hear /(\S*)?#(\d+)/, (msg) ->
+    return if msg.message.user.name.match(new RegExp(config.ignore_users, "gi"))
+
     issue_number = msg.match[2]
     if isNaN(issue_number)
       return
