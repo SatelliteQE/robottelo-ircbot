@@ -5,9 +5,11 @@
 #   None
 #
 # Configuration:
-#   HUBOT_GITHUB_USER
-#   HUBOT_GITHUB_REPO
 #   HUBOT_GITHUB_API_URL
+#   HUBOT_GITHUB_IGNORE_USERS
+#   HUBOT_GITHUB_REPO
+#   HUBOT_GITHUB_TOKEN
+#   HUBOT_GITHUB_USER
 #
 # Commands:
 #   #<number> - link to Github issue #<number> for HUBOT_GITHUB_USER/HUBOT_GITHUB_REPO project
@@ -17,25 +19,28 @@
 # Notes:
 #   Environment variables description:
 #
-#     * HUBOT_GITHUB_USER: the user or organization that will be searched when
-#       specified the repository name and issue number.
-#     * HUBOT_GITHUB_REPO: the repository that will be searched when just the
-#       issue number is specified.
 #     * HUBOT_GITHUB_API_URL: the API URL, if not specified will default to
 #       https://api.github.com. This configuration allows using the plugin for
 #       Github Enterprise.
 #     * HUBOT_GITHUB_IGNORE_USERS: a | separated list of users to ignore.
 #       Example: github|travis-ci
+#     * HUBOT_GITHUB_REPO: the repository that will be searched when just the
+#       issue number is specified.
+#     * HUBOT_GITHUB_TOKEN: a personal access token to authenticate API
+#       requests.
+#     * HUBOT_GITHUB_USER: the user or organization that will be searched when
+#       specified the repository name and issue number.
 #
 # Author:
 #   elyezer
 
 module.exports = (robot) ->
   config =
-    user: process.env.HUBOT_GITHUB_USER
-    repo: process.env.HUBOT_GITHUB_REPO
     api_url: process.env.HUBOT_GITHUB_API_URL or 'https://api.github.com'
     ignore_users: process.env.HUBOT_GITHUB_IGNORE_USERS or 'github'
+    repo: process.env.HUBOT_GITHUB_REPO
+    token: process.env.HUBOT_GITHUB_TOKEN
+    user: process.env.HUBOT_GITHUB_USER
 
 
   unless config.user?
@@ -43,6 +48,9 @@ module.exports = (robot) ->
       return
   unless config.repo?
       robot.logger.error "hubot-github included, but missing HUBOT_GITHUB_REPO."
+      return
+  unless config.token?
+      robot.logger.error "hubot-github included, but missing HUBOT_GITHUB_TOKEN."
       return
 
 
@@ -70,6 +78,7 @@ module.exports = (robot) ->
 
     robot.http("#{config.api_url}/repos/#{user}/#{repo}/issues/#{issue_number}")
       .header('Accept', 'application/json')
+      .header('Authorization', "token #{config.token}")
       .get() (err, res, body) ->
         if res.statusCode is 200
           data = JSON.parse(body)
